@@ -1,0 +1,150 @@
+##removing duplicate words
+
+stopword<-readLines("stopword1.txt")
+stopword<-stopword[stopword!=""]
+class(stopword)
+
+##writing a function to remove duplicate and white space from list/Dictionary
+trim<-function(x)
+{
+  x<- gsub("^\\s+|\\s+$","",x)
+  x<-tolower(x)
+  x<-x[duplicated(x)==FALSE]
+  x<-x[x!=""]
+  x<-sort(x)
+  return(x)
+}
+stopword<-trim(stopword)
+
+## removing and scoring the text
+
+review<-read.csv("yelp.csv",stringsAsFactors = F,header = T)  ##reading from a csv file .
+class(review)     ## checking the class and data type of review.
+colnames(review)
+review<-review$text ## the text or feedbacks are written in text column.
+
+##converting the ratings into text.
+
+x<-review[1:10000,4]
+x<-gsub("1/5","Horrible",x)
+
+x<-gsub("2/5","bad",x)
+
+x<-gsub("3/5","okay",x)
+
+x<-gsub("4/5","good",x)
+
+x<-gsub("5/5","excellent",x)
+
+##using a function to clean the raw feedback using text mining package from R.
+clean<-function(x){
+  require(tm)
+  x<-removeNumbers(x)
+  x<-tolower(x)
+  x<-removeWords(x,stopword)
+  x<-removePunctuation(x)
+  x<-stripWhitespace(x)
+  return(x)
+}
+
+##uploading the Dictionary--for best result the dictionary is broken down into mulitple sets depending upon the category.
+
+##getting the dictionary list
+food_dict<-readLines("food_dict.txt")
+dict<-trim(dict)
+
+food_dict<-readLines("fooditems.txt")
+issue_dic<-readLines("issues.txt")
+
+dict1<-readLines("Service.txt")
+dict1<-trim(dict1)
+
+food_dict1<-c(food_dict,issue_dict)
+
+
+
+##create matrix and dictionary
+
+data.temp<-c()
+data.temp<-c(data,dict1)
+data.temp<-trim(data.temp)
+##for temp--data is stored in a
+data.temp<-doc$dimnames[[2]]
+
+## creating a matrix out of feedback corpus.
+find.matrix<-function(review){
+find.matrix1<-sapply(review,function(review)
+{
+  review<-clean(review)
+  words<-unlist(strsplit(review,split=" "))
+  count.matrix<-data.temp%in%words
+  
+  return(as.integer(count.matrix))
+  
+},simplify = T)
+find.matrix1<-t(find.matrix1)
+}
+
+trainingset.matrix<-find.matrix(a)
+
+## for food --building a training set and using bayesian classifier for text classification.
+
+training_set.food<-as.factor(training_set1$food[1:405])
+nb.food<-naiveBayes(x = trainingset.matrix,y = training_set.food)
+
+
+
+##model for food Quality
+training_set.food_Quality<-as.factor(training_set1$Food_Quality[1:100])
+nb.food_Quality<-naiveBayes(x = trainingset.matrix,y =training_set.food_Quality)
+
+##model for food Pricing
+training_set.food_pricing<-as.factor(training_set1$Food_pricing[1:100])
+nb.food_pricing<-naiveBayes(x = trainingset.matrix,y =training_set.food_pricing)
+
+##model for service
+training_set.service<-as.factor(training_set1$Service[1:405])
+nb.service<-naiveBayes(x = trainingset.matrix,y = training_set.service)
+
+
+training_set.staff_comp<-as.factor(training_set1$Staff_Competence[1:100])
+nb.staff_comp<-naiveBayes(x = trainingset.matrix,y = training_set.staff_comp)
+
+## creating a function to predict in which category does the feedback lie.
+
+classification<-function(res)
+{##converting he testreview to matrix
+  res<-find.matrix(res)
+  
+  ##predicting food
+  food1<-predict(nb.food,res)
+  
+  if(food1==1)
+  { print("food")
+    
+    food_Quality<-predict(nb.food_Quality,res)
+    if(food_Quality==1)
+      print("issue-->food_quality")
+    
+    food_pricing<-predict(nb.food_pricing,res)
+    if(food_pricing==1)
+      print("issue-->food_pricing")
+    
+  }
+  else
+    print("no issue in food")
+  
+  service1<-predict(nb.service,res)
+  
+  if(service1==1)
+  {
+    print("service")
+    service_staff<-predict(nb.staff_comp,res)
+      if(service_staff==1)
+          print("issue-->StaffComptence")
+  }
+else
+  print("no issue in service")
+
+}
+
