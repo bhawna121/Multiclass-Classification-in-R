@@ -1,0 +1,99 @@
+##txt classification using knn from package "class"
+
+
+##init-->loading packages
+
+options(stringsAsFactors = F)
+##sprintf("%s%s",String1,string2)"###concating the strins
+##cleaning text 
+ reviewtext<-review[1:15000]
+ corpus<-Corpus(VectorSource(reviewtext))
+ corpus<-tm_map(corpus,removeNumbers)
+ corpus<-tm_map(corpus,removePunctuation)
+ corpus<-tm_map(corpus,tolower)
+ corpus<-tm_map(corpus,removeWords,stopword)
+ corpus<-tm_map(corpus,stemDocument)
+ corpus<-tm_map(corpus,stripWhitespace)
+ corpus<-tm_map(corpus,PlainTextDocument)
+ ##converrting it itno a document(//TDM one foe each category and attach name and stack them on one other.)
+ doc<-PlainTextDocument(corpus)
+ 
+ doc<-DocumentTermMatrix(corpus)
+ 
+ doc1<-removeSparseTerms(doc,0.95)
+  tdm<-TermDocumentMatrix(corpus)
+ 
+  ##stack
+  
+       ##when creating document ter matrix  from different directory or file there might be some time which does not exist in anothr file or while creating multilpe small tdm and thenn merging them together there might be some term we use
+  
+        ##do.call(rbind.fill,matrix or dataframe)
+  
+   
+  ##hold out model.
+  
+
+  ind<-sample(nrow(temp),size=trunc(0.8*nrow(temp)))
+  test<-(1:nrow(temp))[-ind]
+    
+  ##model kNN
+  
+  knn.prediction<-knn(data.frame(n11[ind,]),data.frame(n11[test,]),temp$food[ind])
+  
+  ##accuracy through confusion matrix
+  
+  con.matrix<-table("predictions"=knn.prediction,Actual=temp$food[test])
+  
+  accuracy=sum(diag(con.matrix))/test
+  
+  
+ ##calculating tf-idf
+ max.term<-c()
+ doc.matrix<-as.matrix(doc1)
+ 
+ n11<-doc.matrix
+ for(i in 1:nrow(n11))
+ {
+  max.term[i]=max(n11[i,])
+  if(max.term[i]==0)
+    n11[i,]=0
+  else
+  n11[i,]=n11[i,]/max.term[i] 
+  
+ }
+ 
+ for(i in 1:ncol(n11))
+ {
+   no.doc[i]<-nrow(n11)-sum(n11[,i]==0)
+   no.doc[i]<-log(nrow(n11)/no.doc[i])
+   
+   n11[,i]<-no.doc[i]*n11[,i]
+ }
+ 
+ 
+ 
+ ##dataframe of terms along with their tfidf value.
+ no<-doc1$dimnames[[2]]
+ no<-data.frame(Terms=no,idf=no.doc)
+ 
+  head(no)
+ x<-(no[order(no[2]),])##sorting the datframe
+ head(x,20)
+ 
+ 
+
+ result<-list(name=net.topic,tdm=tdm)
+ x.mat<-t(data.matrix(result[["tdm"]]))
+ 
+ x.df<-data.frame(x.mat,stringsAsFactors = F)
+ x.df<-cbind(x.mat,rep(tdm[["name"]]),nrow(x.df))
+ 
+ doc<-as.matrix(doc)
+frequency<-(colSums(doc))
+frequency<-sort(frequency,decreasing=T)
+write.csv(frequency,"f.csv")
+
+
+
+testcase<-c("food was overcooked")
+testcase<-classify_test(testcase)
